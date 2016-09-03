@@ -48,6 +48,7 @@ public final class Activator implements BundleActivator
   private final SLF4JLogReader logger;
   private final List<LogReaderService> readers;
   private final ServiceListener listener;
+  private ServiceTracker<LogReaderService, LogReaderService> tracker;
 
   public Activator()
   {
@@ -79,9 +80,11 @@ public final class Activator implements BundleActivator
       final LogReaderService reader = (LogReaderService) context.getService(ref);
       if (reader != null) {
         if (event.getType() == ServiceEvent.REGISTERED) {
+          LOG.debug("adding a log listener to {}", reader);
           this.readers.add(reader);
           reader.addLogListener(this.logger);
         } else if (event.getType() == ServiceEvent.UNREGISTERING) {
+          LOG.debug("removing a log listener from {}", reader);
           reader.removeLogListener(Activator.this.logger);
           this.readers.remove(reader);
         }
@@ -94,22 +97,21 @@ public final class Activator implements BundleActivator
     final BundleContext context)
     throws Exception
   {
-    final ServiceTracker<LogReaderService, LogReaderService> tracker =
+    this.tracker =
       new ServiceTracker<>(context, LogReaderService.class.getName(), null);
-    tracker.open();
+    this.tracker.open();
 
-    final Object[] current_readers = tracker.getServices();
+    final Object[] current_readers = this.tracker.getServices();
     if (current_readers != null) {
       for (int index = 0; index < current_readers.length; index++) {
         final LogReaderService reader =
           (LogReaderService) current_readers[index];
 
+        LOG.debug("adding a log listener to {}", reader);
         this.readers.add(reader);
         reader.addLogListener(this.logger);
       }
     }
-
-    tracker.close();
 
     final String filter =
       "(objectclass=" + LogReaderService.class.getName() + ")";
@@ -129,8 +131,12 @@ public final class Activator implements BundleActivator
     final Iterator<LogReaderService> iter = this.readers.iterator();
     while (iter.hasNext()) {
       final LogReaderService reader = iter.next();
+
+      LOG.debug("removing a log listener from {}", reader);
       reader.removeLogListener(this.logger);
       iter.remove();
     }
+
+    this.tracker.close();
   }
 }
