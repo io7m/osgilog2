@@ -11,6 +11,9 @@ import org.osgi.framework.launch.FrameworkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Policy;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -114,11 +117,19 @@ public final class Main
     final String[] args)
     throws Exception
   {
+    final Path root = Files.createDirectories(Paths.get("/tmp/osgilog2"));
+    final Path root_lib = Files.createDirectories(root.resolve("lib"));
+    final Path root_cache = Files.createDirectories(root.resolve("cache"));
+
+    LOG.debug("root:       {}", root);
+    LOG.debug("root cache: {}", root_cache);
+    LOG.debug("root lib:   {}", root_lib);
+
     final FrameworkFactory frameworkFactory =
       ServiceLoader.load(FrameworkFactory.class).iterator().next();
 
     final Map<String, Object> config = new HashMap<>();
-    config.put(Constants.FRAMEWORK_STORAGE, "/tmp/felix");
+    config.put(Constants.FRAMEWORK_STORAGE, root_cache.toString());
     config.put(Constants.FRAMEWORK_STORAGE_CLEAN, "onFirstInit");
     config.put(Constants.FRAMEWORK_SECURITY, "osgi");
     config.put(FelixConstants.LOG_LEVEL_PROP, "999");
@@ -146,11 +157,16 @@ public final class Main
 
       Main.LOG.debug("installing bundles");
       final List<Bundle> bundles = new LinkedList<>();
-      bundles.add(Main.install(c, "org.apache.felix.framework.security"));
-      bundles.add(Main.install(c, "org.apache.felix.log"));
-      bundles.add(Main.install(c, "logservice"));
-      bundles.add(Main.install(c, "test-osgi-logging"));
-      bundles.add(Main.install(c, "test-logback"));
+      bundles.add(
+        Main.install(c, root_lib, "org.apache.felix.framework.security"));
+      bundles.add(
+        Main.install(c, root_lib, "org.apache.felix.log"));
+      bundles.add(
+        Main.install(c, root_lib, "logservice"));
+      bundles.add(
+        Main.install(c, root_lib, "test-osgi-logging"));
+      bundles.add(
+        Main.install(c, root_lib, "test-logback"));
 
       for (final Bundle bundle : bundles) {
         Main.LOG.debug("starting: {}", bundle);
@@ -198,10 +214,12 @@ public final class Main
 
   private static Bundle install(
     final BundleContext c,
+    final Path lib,
     final String pack)
     throws BundleException
   {
-    Main.LOG.debug("installing {}", pack);
-    return c.installBundle("file:/tmp/osgilog2/" + pack + ".jar");
+    final String file = "file:" + lib + "/" + pack + ".jar";
+    Main.LOG.debug("installing {} ({})", pack, file);
+    return c.installBundle(file);
   }
 }

@@ -18,6 +18,8 @@ public final class Activator implements BundleActivator
     throws Exception
   {
     Activator.LOG.debug("starting test-logback");
+    Activator.LOG.debug(
+      "code source: {}", Activator.class.getProtectionDomain().getCodeSource());
   }
 
   @Override
