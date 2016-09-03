@@ -220,9 +220,9 @@ public final class Main
       bundles.add(
         Main.install(c, root_lib, "org.apache.felix.framework.security"));
       bundles.add(
-        Main.install(c, root_lib, "org.apache.felix.log"));
-      bundles.add(
         Main.install(c, root_lib, "logservice"));
+      bundles.add(
+        Main.install(c, root_lib, "org.apache.felix.log"));
       bundles.add(
         Main.install(c, root_lib, "test-osgi-logging"));
       bundles.add(
