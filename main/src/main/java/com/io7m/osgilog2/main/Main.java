@@ -1,3 +1,19 @@
+/*
+ * Copyright © 2016 <code@io7m.com> http://io7m.com
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
 package com.io7m.osgilog2.main;
 
 import org.apache.felix.framework.util.FelixConstants;
@@ -22,6 +38,12 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * A command line program that starts up an OSGi container and configures
+ * logging such that all log messages produced inside the container end up
+ * going through the host program's logging configuration.
+ */
+
 public final class Main
 {
   private static final Logger LOG;
@@ -36,6 +58,11 @@ public final class Main
   {
 
   }
+
+  /**
+   * An Apache Felix specific logger. This logger is used to capture messages
+   * from the actual framework itself.
+   */
 
   private static final class FelixLogger extends org.apache.felix.framework.Logger
   {
@@ -113,10 +140,23 @@ public final class Main
     }
   }
 
+  /**
+   * The main program.
+   *
+   * @param args Command line arguments
+   *
+   * @throws Exception On errors
+   */
+
   public static void main(
     final String[] args)
     throws Exception
   {
+    /*
+     * The path to the temporary directory. This directory is expected
+     * to be populated with bundles that will be installed into the container.
+     */
+
     final Path root = Files.createDirectories(Paths.get("/tmp/osgilog2"));
     final Path root_lib = Files.createDirectories(root.resolve("lib"));
     final Path root_cache = Files.createDirectories(root.resolve("cache"));
@@ -124,6 +164,12 @@ public final class Main
     LOG.debug("root:       {}", root);
     LOG.debug("root cache: {}", root_cache);
     LOG.debug("root lib:   {}", root_lib);
+
+    /*
+     * Get access to an OSGi framework factory and configure the required
+     * properties to enable logging. Note the use of an Apache Felix specific
+     * configuration value that passes in a Logger implementation.
+     */
 
     final FrameworkFactory frameworkFactory =
       ServiceLoader.load(FrameworkFactory.class).iterator().next();
@@ -135,6 +181,12 @@ public final class Main
     config.put(FelixConstants.LOG_LEVEL_PROP, "999");
     config.put(FelixConstants.LOG_LOGGER_PROP, new FelixLogger());
 
+    /*
+     * Expose the host's SLF4J API to the container. This ensures that
+     * any time a package requires the SLF4J, the actual implementation will
+     * be resolved to the one on the host.
+     */
+
     final StringBuilder sb = new StringBuilder(128);
     sb.append("org.slf4j; version=1.7.21");
     sb.append(",");
@@ -145,6 +197,10 @@ public final class Main
     @SuppressWarnings("unchecked")
     final Map<String, String> config_strings = (Map<String, String>) cast;
 
+    /*
+     * Start the framework.
+     */
+
     Main.LOG.debug("starting framework");
 
     final Framework framework = frameworkFactory.newFramework(config_strings);
@@ -154,6 +210,10 @@ public final class Main
 
     try {
       final BundleContext c = framework.getBundleContext();
+
+      /*
+       * Install all of the bundles.
+       */
 
       Main.LOG.debug("installing bundles");
       final List<Bundle> bundles = new LinkedList<>();
