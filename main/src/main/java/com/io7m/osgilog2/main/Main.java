@@ -11,6 +11,10 @@ import org.osgi.framework.launch.FrameworkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.Policy;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +27,8 @@ public final class Main
   private static final Logger LOG;
 
   static {
+    Policy.setPolicy(new PermissivePolicy());
+
     LOG = LoggerFactory.getLogger(Main.class);
   }
 
@@ -30,7 +36,6 @@ public final class Main
   {
 
   }
-
 
   private static final class FelixLogger extends org.apache.felix.framework.Logger
   {
@@ -112,12 +117,21 @@ public final class Main
     final String[] args)
     throws Exception
   {
+    final Path root = Files.createDirectories(Paths.get("/tmp/osgilog2"));
+    final Path root_lib = Files.createDirectories(root.resolve("lib"));
+    final Path root_cache = Files.createDirectories(root.resolve("cache"));
+
+    LOG.debug("root:       {}", root);
+    LOG.debug("root cache: {}", root_cache);
+    LOG.debug("root lib:   {}", root_lib);
+
     final FrameworkFactory frameworkFactory =
       ServiceLoader.load(FrameworkFactory.class).iterator().next();
 
     final Map<String, Object> config = new HashMap<>();
-    config.put(Constants.FRAMEWORK_STORAGE, "/tmp/felix");
+    config.put(Constants.FRAMEWORK_STORAGE, root_cache.toString());
     config.put(Constants.FRAMEWORK_STORAGE_CLEAN, "onFirstInit");
+    config.put(Constants.FRAMEWORK_SECURITY, "osgi");
     config.put(FelixConstants.LOG_LEVEL_PROP, "999");
     config.put(FelixConstants.LOG_LOGGER_PROP, new FelixLogger());
 
@@ -136,15 +150,23 @@ public final class Main
     final Framework framework = frameworkFactory.newFramework(config_strings);
     framework.start();
 
+    Main.LOG.debug("security manager: {}", System.getSecurityManager());
+
     try {
       final BundleContext c = framework.getBundleContext();
 
       Main.LOG.debug("installing bundles");
       final List<Bundle> bundles = new LinkedList<>();
-      bundles.add(Main.install(c, "logservice"));
-      bundles.add(Main.install(c, "org.apache.felix.log"));
-      bundles.add(Main.install(c, "test-osgi-logging"));
-      bundles.add(Main.install(c, "test-logback"));
+      bundles.add(
+        Main.install(c, root_lib, "org.apache.felix.framework.security"));
+      bundles.add(
+        Main.install(c, root_lib, "org.apache.felix.log"));
+      bundles.add(
+        Main.install(c, root_lib, "logservice"));
+      bundles.add(
+        Main.install(c, root_lib, "test-osgi-logging"));
+      bundles.add(
+        Main.install(c, root_lib, "test-logback"));
 
       for (final Bundle bundle : bundles) {
         Main.LOG.debug("starting: {}", bundle);
@@ -192,9 +214,12 @@ public final class Main
 
   private static Bundle install(
     final BundleContext c,
+    final Path lib,
     final String pack)
     throws BundleException
   {
-    return c.installBundle("file:/tmp/osgilog2/" + pack + ".jar");
+    final String file = "file:" + lib + "/" + pack + ".jar";
+    Main.LOG.debug("installing {} ({})", pack, file);
+    return c.installBundle(file);
   }
 }
