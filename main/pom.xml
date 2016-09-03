@@ -37,6 +37,10 @@
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.log</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.apache.felix.framework.security</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>ch.qos.logback</groupId>
