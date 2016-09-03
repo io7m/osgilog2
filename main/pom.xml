@@ -17,29 +17,35 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>test-logback</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>test-osgi-logging</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>logservice</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.framework</artifactId>
     </dependency>
+
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.log</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.framework.security</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -64,6 +70,7 @@
               <outputDirectory>/tmp/osgilog2/lib</outputDirectory>
               <stripVersion>true</stripVersion>
               <copyPom>true</copyPom>
+              <includeScope>provided</includeScope>
             </configuration>
           </execution>
         </executions>
